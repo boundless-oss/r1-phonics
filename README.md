@@ -22,8 +22,14 @@ window.dispatchEvent(new Event('longPressStart'));
 
 ## Deployment
 
-Static host on Netlify. `netlify.toml` sets `public/` as the publish dir. The creation is installed onto an R1 by pointing the SDK's `qr/` tool at the deployed HTTPS URL and scanning.
+GitHub Pages, served from `public/` via `.github/workflows/pages.yml`. Every push to `main` deploys automatically. Live URL: https://boundless-oss.github.io/r1-phonics/
+
+The creation is installed onto an R1 by pointing the SDK's `qr/` tool at the Pages URL and scanning.
 
 ## Status
 
 V1 scaffold — verbatim plugin-demo from [`rabbit-hmi-oss/creations-sdk`](https://github.com/rabbit-hmi-oss/creations-sdk). Strip and rebuild in M1 (see plan file).
+
+## License
+
+MIT — see [LICENSE](LICENSE).
