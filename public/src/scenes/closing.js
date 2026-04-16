@@ -6,7 +6,7 @@
     const root = document.getElementById('scene');
     root.innerHTML = `
       <div class="closing">
-        <div class="closing-glyph">✿</div>
+        <div class="closing-glyph">//ok</div>
       </div>`;
 
     await audio.playChime('close');

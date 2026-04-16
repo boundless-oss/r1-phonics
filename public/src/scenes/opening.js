@@ -6,8 +6,8 @@
     const root = document.getElementById('scene');
     root.innerHTML = `
       <div class="opening">
-        <div class="opening-glyph">✶</div>
-        <div class="opening-hint">tap or press</div>
+        <div class="opening-glyph">&gt;_</div>
+        <div class="opening-hint">press to begin</div>
       </div>`;
 
     let advanced = false;

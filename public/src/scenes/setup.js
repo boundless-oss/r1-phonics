@@ -2,31 +2,53 @@
   'use strict';
   const { audio, hardware, recorder, storage, audioProcessing } = window.R1Phonics;
 
-  const LETTER_HINTS = {
-    a: '/æ/ — apple',     b: '/b/ — quick puff',   c: '/k/ — cat',
-    d: '/d/ — quick tap', e: '/ɛ/ — egg',          f: '/fff/ — sustained',
-    g: '/g/ — go',        h: '/h/ — soft breath',  i: '/ɪ/ — it',
-    j: '/ʤ/ — jam',       k: '/k/ — quick',        l: '/lll/ — hummed',
-    m: '/mmm/ — hummed',  n: '/nnn/ — hummed',     o: '/ɒ/ — octopus',
-    p: '/p/ — light puff', q: '/kw/ — quick',      r: '/r/ — soft growl',
-    s: '/sss/ — hiss',    t: '/t/ — tongue tap',   u: '/ʌ/ — up',
-    v: '/vvv/ — buzz',    w: '/w/ — rounded',      x: '/ks/ — fox',
-    y: '/y/ — yellow',    z: '/zzz/ — buzz',
+  const LETTER_PROMPTS = {
+    a: { say: 'aaa',  context: 'as in apple' },
+    b: { say: 'b',    context: 'quick puff, no vowel' },
+    c: { say: 'k',    context: 'hard c, as in cat' },
+    d: { say: 'd',    context: 'quick tap, no vowel' },
+    e: { say: 'eee',  context: 'as in egg' },
+    f: { say: 'fff',  context: 'teeth on lip, sustained' },
+    g: { say: 'g',    context: 'hard g, as in go' },
+    h: { say: 'h',    context: 'soft breath, like warming a mirror' },
+    i: { say: 'ih',   context: 'as in it' },
+    j: { say: 'j',    context: 'as in jam' },
+    k: { say: 'k',    context: 'same as c, quick' },
+    l: { say: 'lll',  context: 'tongue on roof, hummed' },
+    m: { say: 'mmm',  context: 'lips closed, hummed' },
+    n: { say: 'nnn',  context: 'tongue behind teeth, hummed' },
+    o: { say: 'ooo',  context: 'as in octopus' },
+    p: { say: 'p',    context: 'light puff, no vowel' },
+    q: { say: 'kw',   context: 'quick kw blend' },
+    r: { say: 'rrr',  context: 'soft growl' },
+    s: { say: 'sss',  context: 'hiss like a snake' },
+    t: { say: 't',    context: 'tongue tap, no vowel' },
+    u: { say: 'uh',   context: 'as in up' },
+    v: { say: 'vvv',  context: 'teeth on lip, buzzy' },
+    w: { say: 'w',    context: 'round lips and release' },
+    x: { say: 'ks',   context: 'end sound, as in fox' },
+    y: { say: 'y',    context: 'as in yellow' },
+    z: { say: 'zzz',  context: 'buzzy hiss' },
   };
 
   const PRAISE_TEXT = audio.PRAISE_TEXT;
 
   function buildPrompts() {
-    const letters = 'abcdefghijklmnopqrstuvwxyz'.split('').map((ch) => ({
-      slug: `letters-${ch}`,
-      big: ch,
-      hint: LETTER_HINTS[ch] || ch,
-      category: 'letter',
-    }));
+    const letters = 'abcdefghijklmnopqrstuvwxyz'.split('').map((ch) => {
+      const p = LETTER_PROMPTS[ch];
+      return {
+        slug: `letters-${ch}`,
+        big: ch,
+        say: `"${p.say}"`,
+        context: p.context,
+        category: 'letter',
+      };
+    });
     const praise = Object.entries(PRAISE_TEXT).map(([slug, text]) => ({
       slug: `praise-${slug}`,
-      big: '♪',
-      hint: `"${text}"`,
+      big: '\u266A',
+      say: `"${text}"`,
+      context: 'say this phrase warmly',
       category: 'praise',
     }));
     return [...letters, ...praise];
@@ -72,7 +94,8 @@
       <div class="setup">
         <div class="setup-progress">${promptIndex + 1} / ${PROMPTS.length}</div>
         <div class="setup-big">${prompt.big}</div>
-        <div class="setup-hint">${prompt.hint}</div>
+        <div class="setup-say">say: <em>${prompt.say}</em></div>
+        <div class="setup-context">${prompt.context}</div>
         <div class="setup-state" id="setup-state">hold PTT to record</div>
       </div>`;
 
