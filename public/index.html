@@ -1,38 +1,157 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=240, initial-scale=1.0, user-scalable=no">
-    <title>R1 Creations Test App</title>
-    <link rel="stylesheet" href="css/styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=240, initial-scale=1.0, user-scalable=no">
+  <title>r1-phonics — M1 diagnostic</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="app">
-        <header>
-            <h1>R1 Test</h1>
-            <button id="menuBtn" class="menu-button" aria-label="Menu">☰</button>
-        </header>
+  <div id="page">
+    <section class="panel" id="panel-events">
+      <h2>Events</h2>
+      <div class="row"><span class="muted">last</span> <span id="last-event">—</span></div>
+      <ol id="event-log" aria-live="polite"></ol>
+    </section>
 
-        <nav id="menuNav" class="menu-nav">
-            <button class="close-menu" id="closeMenu">×</button>
-            <ul>
-                <li><a href="#" data-page="hardware">Hardware</a></li>
-                <li><a href="#" data-page="data">Data</a></li>
-                <li><a href="#" data-page="speak">Speak</a></li>
-            </ul>
-        </nav>
+    <section class="panel" id="panel-audio">
+      <h2>Audio</h2>
+      <div class="row"><span class="muted">unlocked</span> <span id="audio-state" class="warn">no</span></div>
+      <div class="row" style="margin-top:4px">
+        <button id="btn-unlock">Unlock + beep</button>
+        <button id="btn-beep">Beep</button>
+      </div>
+    </section>
 
-        <main id="content">
-            <div class="welcome">
-                <h2>Welcome</h2>
-                <p>Select an option from the menu to begin testing.</p>
-            </div>
-        </main>
-    </div>
+    <section class="panel" id="panel-storage">
+      <h2>Storage</h2>
+      <div class="row"><span class="muted">sessions</span> <span id="session-count">?</span></div>
+      <div class="row"><span class="muted">letterIndex</span> <span id="letter-index">?</span></div>
+      <div class="row" style="margin-top:4px">
+        <button id="btn-bump">+1 session</button>
+        <button id="btn-reset">Reset</button>
+      </div>
+    </section>
 
-    <script src="js/app.js"></script>
-    <script src="js/hardware.js"></script>
-    <script src="js/data.js"></script>
-    <script src="js/speak.js"></script>
+    <section class="panel" id="panel-viewport">
+      <h2>Viewport</h2>
+      <div class="row"><span class="muted">window</span> <span id="viewport-size">?</span></div>
+      <div class="row"><span class="muted">screen</span> <span id="screen-size">?</span></div>
+      <div class="row"><span class="muted">dpr</span> <span id="dpr">?</span></div>
+      <div class="row" style="margin-top:4px">
+        <button id="btn-grid">Toggle 10px grid</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="grid-overlay"></div>
+  <div id="viewport-label"></div>
+
+  <script src="src/storage.js"></script>
+  <script src="src/hardware.js"></script>
+  <script src="src/audio.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      const { hardware, audio, storage } = window.R1Phonics;
+
+      // --- Events panel ---
+      const lastEventEl = document.getElementById('last-event');
+      const logEl = document.getElementById('event-log');
+      const logEvent = (name) => {
+        lastEventEl.textContent = name;
+        const ts = new Date().toISOString().slice(11, 19);
+        const li = document.createElement('li');
+        li.textContent = `${ts} ${name}`;
+        logEl.insertBefore(li, logEl.firstChild);
+        while (logEl.children.length > 6) logEl.removeChild(logEl.lastChild);
+      };
+      hardware.EVENTS.forEach((e) => hardware.on(e, () => logEvent(e)));
+      hardware.onTap(() => logEvent('tap'));
+
+      // --- Scroll wheel scrolls the diagnostic page ---
+      const page = document.getElementById('page');
+      hardware.on('scrollUp', () => page.scrollBy({ top: -40, behavior: 'smooth' }));
+      hardware.on('scrollDown', () => page.scrollBy({ top: 40, behavior: 'smooth' }));
+
+      // --- Audio panel ---
+      const audioStateEl = document.getElementById('audio-state');
+      const refreshAudioState = () => {
+        if (audio.isUnlocked()) { audioStateEl.textContent = 'YES'; audioStateEl.className = 'ok'; }
+        else { audioStateEl.textContent = 'no'; audioStateEl.className = 'warn'; }
+      };
+      refreshAudioState();
+
+      let beepCtx = null;
+      const beep = async () => {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        beepCtx = beepCtx || new Ctx();
+        if (beepCtx.state === 'suspended') await beepCtx.resume();
+        const osc = beepCtx.createOscillator();
+        const gain = beepCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 523.25; // C5
+        gain.gain.setValueAtTime(0.0001, beepCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.15, beepCtx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, beepCtx.currentTime + 0.25);
+        osc.connect(gain); gain.connect(beepCtx.destination);
+        osc.start(); osc.stop(beepCtx.currentTime + 0.3);
+      };
+
+      document.getElementById('btn-unlock').addEventListener('click', async () => {
+        await audio.unlock();
+        refreshAudioState();
+        await beep();
+      });
+      document.getElementById('btn-beep').addEventListener('click', () => {
+        if (!audio.isUnlocked()) {
+          logEvent('beep blocked — unlock first');
+          return;
+        }
+        beep();
+      });
+
+      // --- Storage panel ---
+      const sessionEl = document.getElementById('session-count');
+      const letterEl = document.getElementById('letter-index');
+      const refreshStorage = async () => {
+        const s = await storage.load();
+        sessionEl.textContent = s.sessionCount;
+        letterEl.textContent = s.letterIndex;
+      };
+      document.getElementById('btn-bump').addEventListener('click', async () => {
+        const s = await storage.load();
+        s.sessionCount += 1;
+        s.lastSessionISO = new Date().toISOString();
+        await storage.save(s);
+        await refreshStorage();
+      });
+      document.getElementById('btn-reset').addEventListener('click', async () => {
+        await storage.reset();
+        await refreshStorage();
+      });
+      refreshStorage();
+
+      // --- Viewport panel ---
+      const vpSizeEl = document.getElementById('viewport-size');
+      const scSizeEl = document.getElementById('screen-size');
+      const dprEl = document.getElementById('dpr');
+      const vpLabel = document.getElementById('viewport-label');
+      const refreshViewport = () => {
+        vpSizeEl.textContent = `${window.innerWidth}×${window.innerHeight}`;
+        scSizeEl.textContent = `${screen.width}×${screen.height}`;
+        dprEl.textContent = window.devicePixelRatio.toFixed(2);
+        vpLabel.textContent = `${window.innerWidth}×${window.innerHeight} @${window.devicePixelRatio.toFixed(2)}x`;
+      };
+      window.addEventListener('resize', refreshViewport);
+      refreshViewport();
+
+      const gridEl = document.getElementById('grid-overlay');
+      document.getElementById('btn-grid').addEventListener('click', () => {
+        gridEl.classList.toggle('on');
+      });
+    })();
+  </script>
 </body>
 </html>
