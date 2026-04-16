@@ -303,4 +303,7 @@
   window.R1Phonics = window.R1Phonics || {};
   window.R1Phonics.scenes = window.R1Phonics.scenes || {};
   window.R1Phonics.scenes.setup = { enter, exit, name: 'setup' };
+  window.R1Phonics.manifest = {
+    allSlugs: BASE_PROMPTS.map((p) => p.slug),
+  };
 })();

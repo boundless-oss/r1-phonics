@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  const { storage, scenes } = window.R1Phonics;
+  const { storage, scenes, manifest } = window.R1Phonics;
 
   const router = {
     state: null,
@@ -19,23 +19,32 @@
     // Hold the splash visible briefly so the version tag is readable.
     await new Promise((r) => setTimeout(r, 1200));
     router.state = await storage.load();
-    if (router.state.setupDone) {
-      // Auto-heal: setupDone=true but clips gone (storage cleared, quota blowup, etc).
-      // Verify a few expected clips actually exist before trusting the flag.
-      const sampleKeys = ['letters-s', 'names-s', 'praise-said-1'];
-      const present = await Promise.all(
-        sampleKeys.map((k) => storage.loadClipWithMeta(k).then((c) => !!c))
-      );
-      if (!present.every(Boolean)) {
-        router.state.setupDone = false;
-        router.state.setupNextIndex = 0;
+
+    // Storage is the source of truth — not the setupDone flag. Check every
+    // expected clip; if all present, setup is effectively done regardless of
+    // what the flag says. If any missing, resume at the first gap.
+    const presence = await Promise.all(
+      manifest.allSlugs.map((slug) =>
+        storage.loadClipWithMeta(slug).then((c) => !!c)
+      )
+    );
+    const firstMissing = presence.findIndex((ok) => !ok);
+    const allPresent = firstMissing === -1;
+
+    if (allPresent) {
+      if (!router.state.setupDone) {
+        router.state.setupDone = true;
         await storage.save(router.state);
       }
-    }
-    if (!router.state.setupDone) {
-      await router.goto('setup');
-    } else {
       await router.goto('opening');
+    } else {
+      // Resume setup at the first gap so partial progress isn't thrown away.
+      if (router.state.setupDone || router.state.setupNextIndex !== firstMissing) {
+        router.state.setupDone = false;
+        router.state.setupNextIndex = firstMissing;
+        await storage.save(router.state);
+      }
+      await router.goto('setup');
     }
   }
 
