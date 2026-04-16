@@ -77,6 +77,14 @@ button:active { opacity: 0.7; }
 }
 #event-log li { padding: 1px 0; }
 
+#build-id {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 9px;
+  color: var(--muted);
+  text-align: right;
+  margin-bottom: 2px;
+}
+
 #grid-overlay {
   position: fixed;
   inset: 0;

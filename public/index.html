@@ -8,6 +8,7 @@
 </head>
 <body>
   <div id="page">
+    <div id="build-id"></div>
     <section class="panel" id="panel-events">
       <h2>Events</h2>
       <div class="row"><span class="muted">last</span> <span id="last-event">—</span></div>
@@ -67,7 +68,6 @@
         while (logEl.children.length > 6) logEl.removeChild(logEl.lastChild);
       };
       hardware.EVENTS.forEach((e) => hardware.on(e, () => logEvent(e)));
-      hardware.observeTaps(() => logEvent('tap'));
 
       // --- Scroll wheel scrolls the diagnostic page ---
       const page = document.getElementById('page');
@@ -100,11 +100,13 @@
       };
 
       document.getElementById('btn-unlock').addEventListener('click', async () => {
+        logEvent('btn-unlock click');
         await audio.unlock();
         refreshAudioState();
         await beep();
       });
       document.getElementById('btn-beep').addEventListener('click', () => {
+        logEvent('btn-beep click');
         if (!audio.isUnlocked()) {
           logEvent('beep blocked — unlock first');
           return;
@@ -121,6 +123,7 @@
         letterEl.textContent = s.letterIndex;
       };
       document.getElementById('btn-bump').addEventListener('click', async () => {
+        logEvent('btn-bump click');
         const s = await storage.load();
         s.sessionCount += 1;
         s.lastSessionISO = new Date().toISOString();
@@ -128,6 +131,7 @@
         await refreshStorage();
       });
       document.getElementById('btn-reset').addEventListener('click', async () => {
+        logEvent('btn-reset click');
         await storage.reset();
         await refreshStorage();
       });
@@ -149,8 +153,12 @@
 
       const gridEl = document.getElementById('grid-overlay');
       document.getElementById('btn-grid').addEventListener('click', () => {
+        logEvent('btn-grid click');
         gridEl.classList.toggle('on');
       });
+
+      // --- Build ID ---
+      document.getElementById('build-id').textContent = 'build ' + new Date('2026-04-16T00:40:00Z').toISOString().slice(5, 16);
     })();
   </script>
 </body>

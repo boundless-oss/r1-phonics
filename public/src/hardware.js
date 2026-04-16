@@ -22,13 +22,6 @@
     };
   }
 
-  // Passive tap observer — no preventDefault, so normal button clicks still fire.
-  function observeTaps(fn) {
-    const handler = (ev) => fn(ev);
-    document.body.addEventListener('touchstart', handler, { passive: true });
-    return () => document.body.removeEventListener('touchstart', handler);
-  }
-
   window.R1Phonics = window.R1Phonics || {};
-  window.R1Phonics.hardware = { on, observeTaps, EVENTS };
+  window.R1Phonics.hardware = { on, EVENTS };
 })();
