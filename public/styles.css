@@ -273,6 +273,25 @@ html, body {
   text-shadow: 0 0 8px rgba(255, 45, 107, 0.4);
 }
 
+.setup.parent .setup-progress {
+  color: var(--warm);
+  text-shadow: 0 0 6px rgba(255, 45, 107, 0.4);
+}
+.setup.parent .setup-big {
+  -webkit-text-stroke-color: #fff;
+  filter:
+    drop-shadow(0 0 4px #ff2d6b)
+    drop-shadow(0 0 12px #ff2d6b)
+    drop-shadow(0 0 28px rgba(255, 45, 107, 0.5));
+}
+.setup.parent .setup-say em {
+  color: var(--warm);
+  text-shadow: var(--neon-text-pink);
+}
+.setup-big.exit-glyph {
+  font-size: 80px;
+}
+
 /* ----- Closing ----- */
 .closing {
   display: flex;
