@@ -16,6 +16,8 @@
   };
 
   async function boot() {
+    // Hold the splash visible briefly so the version tag is readable.
+    await new Promise((r) => setTimeout(r, 1200));
     router.state = await storage.load();
     if (router.state.setupDone) {
       // Auto-heal: setupDone=true but clips gone (storage cleared, quota blowup, etc).

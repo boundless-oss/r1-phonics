@@ -79,6 +79,13 @@ html, body {
   letter-spacing: 0.3em;
   text-transform: uppercase;
 }
+.splash-version {
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+}
 
 /* ----- Opening ----- */
 .opening {

@@ -22,6 +22,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Write version.js
+        run: |
+          SHA=$(git rev-parse --short HEAD)
+          DATE=$(date -u +%Y-%m-%d)
+          echo "window.R1PhonicsVersion = '${SHA} · ${DATE}';" > public/version.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

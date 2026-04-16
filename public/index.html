@@ -14,9 +14,14 @@
     <div class="splash">
       <div class="splash-title">r1</div>
       <div class="splash-sub">phonics</div>
+      <div class="splash-version" id="splash-version"></div>
     </div>
   </div>
 
+  <script src="version.js"></script>
+  <script>
+    document.getElementById('splash-version').textContent = window.R1PhonicsVersion || 'dev';
+  </script>
   <script src="src/storage.js"></script>
   <script src="src/hardware.js"></script>
   <script src="src/audio.js"></script>
