@@ -2,47 +2,65 @@
   'use strict';
   const { audio, hardware, recorder, storage, audioProcessing } = window.R1Phonics;
 
-  const LETTER_PROMPTS = {
-    a: { say: 'aaa',  context: 'as in apple' },
-    b: { say: 'b',    context: 'quick puff, no vowel' },
-    c: { say: 'k',    context: 'hard c, as in cat' },
-    d: { say: 'd',    context: 'quick tap, no vowel' },
-    e: { say: 'eee',  context: 'as in egg' },
-    f: { say: 'fff',  context: 'teeth on lip, sustained' },
-    g: { say: 'g',    context: 'hard g, as in go' },
-    h: { say: 'h',    context: 'soft breath, like warming a mirror' },
-    i: { say: 'ih',   context: 'as in it' },
-    j: { say: 'j',    context: 'as in jam' },
-    k: { say: 'k',    context: 'same as c, quick' },
-    l: { say: 'lll',  context: 'tongue on roof, hummed' },
-    m: { say: 'mmm',  context: 'lips closed, hummed' },
-    n: { say: 'nnn',  context: 'tongue behind teeth, hummed' },
-    o: { say: 'ooo',  context: 'as in octopus' },
-    p: { say: 'p',    context: 'light puff, no vowel' },
-    q: { say: 'kw',   context: 'quick kw blend' },
-    r: { say: 'rrr',  context: 'soft growl' },
-    s: { say: 'sss',  context: 'hiss like a snake' },
-    t: { say: 't',    context: 'tongue tap, no vowel' },
-    u: { say: 'uh',   context: 'as in up' },
-    v: { say: 'vvv',  context: 'teeth on lip, buzzy' },
-    w: { say: 'w',    context: 'round lips and release' },
-    x: { say: 'ks',   context: 'end sound, as in fox' },
-    y: { say: 'y',    context: 'as in yellow' },
-    z: { say: 'zzz',  context: 'buzzy hiss' },
+  const LETTER_SOUNDS = {
+    a: { say: 'aaa',  context: 'the sound, as in apple' },
+    b: { say: 'b',    context: 'the sound — quick puff, no vowel' },
+    c: { say: 'k',    context: 'the sound — hard c, as in cat' },
+    d: { say: 'd',    context: 'the sound — quick tap' },
+    e: { say: 'eee',  context: 'the sound, as in egg' },
+    f: { say: 'fff',  context: 'the sound — teeth on lip, sustained' },
+    g: { say: 'g',    context: 'the sound — hard g, as in go' },
+    h: { say: 'h',    context: 'the sound — soft breath' },
+    i: { say: 'ih',   context: 'the sound, as in it' },
+    j: { say: 'j',    context: 'the sound, as in jam' },
+    k: { say: 'k',    context: 'the sound — same as c' },
+    l: { say: 'lll',  context: 'the sound — hummed' },
+    m: { say: 'mmm',  context: 'the sound — lips closed hum' },
+    n: { say: 'nnn',  context: 'the sound — tongue-behind-teeth hum' },
+    o: { say: 'ooo',  context: 'the sound, as in octopus' },
+    p: { say: 'p',    context: 'the sound — light puff, no vowel' },
+    q: { say: 'kw',   context: 'the sound — kw blend' },
+    r: { say: 'rrr',  context: 'the sound — soft growl' },
+    s: { say: 'sss',  context: 'the sound — hiss like a snake' },
+    t: { say: 't',    context: 'the sound — tongue tap' },
+    u: { say: 'uh',   context: 'the sound, as in up' },
+    v: { say: 'vvv',  context: 'the sound — buzzy' },
+    w: { say: 'w',    context: 'the sound — round and release' },
+    x: { say: 'ks',   context: 'the sound, as in fox' },
+    y: { say: 'y',    context: 'the sound, as in yellow' },
+    z: { say: 'zzz',  context: 'the sound — buzzy hiss' },
+  };
+
+  const LETTER_NAMES = {
+    a: 'ay',   b: 'bee',  c: 'see',  d: 'dee',  e: 'ee',
+    f: 'eff',  g: 'gee',  h: 'aitch', i: 'eye', j: 'jay',
+    k: 'kay',  l: 'ell',  m: 'em',   n: 'en',   o: 'oh',
+    p: 'pee',  q: 'cue',  r: 'ar',   s: 'ess',  t: 'tee',
+    u: 'you',  v: 'vee',  w: 'double-you', x: 'ex', y: 'why', z: 'zee',
   };
 
   const PRAISE_TEXT = audio.PRAISE_TEXT;
 
   function buildPrompts() {
-    const letters = 'abcdefghijklmnopqrstuvwxyz'.split('').map((ch) => {
-      const p = LETTER_PROMPTS[ch];
-      return {
-        slug: `letters-${ch}`,
-        big: ch,
-        say: `"${p.say}"`,
-        context: p.context,
-        category: 'letter',
-      };
+    // Paired per letter: name first, then sound. Reduces mental context-switching.
+    const letterPairs = 'abcdefghijklmnopqrstuvwxyz'.split('').flatMap((ch) => {
+      const s = LETTER_SOUNDS[ch];
+      return [
+        {
+          slug: `names-${ch}`,
+          big: ch,
+          say: `"${LETTER_NAMES[ch]}"`,
+          context: 'the letter name',
+          category: 'name',
+        },
+        {
+          slug: `letters-${ch}`,
+          big: ch,
+          say: `"${s.say}"`,
+          context: s.context,
+          category: 'sound',
+        },
+      ];
     });
     const praise = Object.entries(PRAISE_TEXT).map(([slug, text]) => ({
       slug: `praise-${slug}`,
@@ -51,7 +69,7 @@
       context: 'say this phrase warmly',
       category: 'praise',
     }));
-    return [...letters, ...praise];
+    return [...letterPairs, ...praise];
   }
 
   const PROMPTS = buildPrompts();

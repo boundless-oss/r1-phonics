@@ -2,7 +2,9 @@
   'use strict';
   const { audio, hardware, sequence } = window.R1Phonics;
 
-  const MODEL_PAUSE_MS = 800;
+  const NAME_TO_SOUND_PAUSE = 500;
+  const SOUND_PAUSE = 800;
+  const FINAL_PAUSE = 600;
 
   async function enter(router) {
     const state = router.state;
@@ -26,13 +28,21 @@
     root.addEventListener('click', onTap, { once: true });
     const off3 = () => root.removeEventListener('click', onTap);
 
-    // Model the sound 3× with gentle pauses. User can interrupt at any time.
-    for (let i = 0; i < 3 && !advanced; i++) {
-      await audio.playLetter(letter);
-      if (advanced) break;
-      await sleep(MODEL_PAUSE_MS);
-    }
-    if (!advanced) await sleep(600);
+    // Model: name → pause → sound → pause → sound.
+    // User can interrupt at any time.
+    await audio.playName(letter);
+    if (advanced) return;
+    await sleep(NAME_TO_SOUND_PAUSE);
+    if (advanced) return;
+
+    await audio.playLetter(letter);
+    if (advanced) return;
+    await sleep(SOUND_PAUSE);
+    if (advanced) return;
+
+    await audio.playLetter(letter);
+    if (advanced) return;
+    await sleep(FINAL_PAUSE);
     advance();
   }
 

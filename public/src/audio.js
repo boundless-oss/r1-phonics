@@ -96,6 +96,11 @@
     if (clip) return playClip(`letters-${letter}`, clip);
   }
 
+  async function playName(letter) {
+    const clip = await storage().loadClipWithMeta(`names-${letter}`);
+    if (clip) return playClip(`names-${letter}`, clip);
+  }
+
   async function playPraise(slug) {
     const clip = await storage().loadClipWithMeta(`praise-${slug}`);
     if (clip) return playClip(`praise-${slug}`, clip);
@@ -145,7 +150,7 @@
   window.R1Phonics = window.R1Phonics || {};
   window.R1Phonics.audio = {
     unlock, onUnlock, isUnlocked,
-    playLetter, playPraise, playChime,
+    playLetter, playName, playPraise, playChime,
     playClip, playClipDirect, PRAISE_TEXT,
   };
 })();
