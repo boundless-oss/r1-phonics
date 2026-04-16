@@ -93,7 +93,7 @@
       return;
     }
     await recorder.init();
-    render(router);
+    await render(router);
   }
 
   function exit() {
@@ -102,7 +102,7 @@
     document.getElementById('scene').innerHTML = '';
   }
 
-  function render(router) {
+  async function render(router) {
     cleanup();
     const prompt = prompts[promptIndex];
     const root = document.getElementById('scene');
@@ -112,20 +112,26 @@
       return;
     }
 
+    const savedClip = await storage.loadClipWithMeta(prompt.slug);
+    const hasSaved = !!savedClip;
+
     const progressLabel = parentMode
       ? `parent \u00b7 ${promptIndex + 1}/${prompts.length - 1}`
       : `${promptIndex + 1} / ${prompts.length}`;
 
+    const savedBadge = hasSaved ? '<span class="saved-badge">\u2713</span>' : '';
+
     root.innerHTML = `
       <div class="setup${parentMode ? ' parent' : ''}">
-        <div class="setup-progress">${progressLabel}</div>
+        <div class="setup-progress">${progressLabel}${savedBadge}</div>
         <div class="setup-big">${prompt.big}</div>
         <div class="setup-say">say: <em>${prompt.say}</em></div>
         <div class="setup-context">${prompt.context}</div>
-        <div class="setup-state" id="setup-state">hold PTT to record</div>
+        <div class="setup-state" id="setup-state">${hasSaved ? 'tap to replay  \u00b7  hold PTT to redo' : 'hold PTT to record'}</div>
       </div>`;
 
     const stateEl = document.getElementById('setup-state');
+    if (hasSaved) stateEl.classList.add('tappable', 'ok');
     let timerInterval = null;
     let recordStart = 0;
     currentBlob = null;
@@ -136,6 +142,25 @@
       stateEl.textContent = text;
       stateEl.className = 'setup-state' + (cls ? ` ${cls}` : '');
     };
+
+    // Tap the state line to replay whatever clip is currently playable:
+    // the just-recorded review, or the stored clip if one exists.
+    const replayHandler = async () => {
+      if (recState === 'recording' || recState === 'saving') return;
+      if (currentBlob && currentMeta) {
+        await audio.playClipDirect(currentBlob, currentMeta);
+        return;
+      }
+      const fresh = await storage.loadClipWithMeta(prompt.slug);
+      if (fresh) {
+        await audio.unlock();
+        await audio.playClipDirect(fresh.blob, {
+          gain: fresh.gain, trimStart: fresh.trimStart, trimEnd: fresh.trimEnd,
+        });
+      }
+    };
+    stateEl.addEventListener('click', replayHandler);
+    const offReplay = () => stateEl.removeEventListener('click', replayHandler);
 
     const off1 = hardware.on('longPressStart', async () => {
       if (recState === 'saving') return;
@@ -191,7 +216,7 @@
         if (parentMode) {
           updateState('saved \u2713', 'ok');
           await new Promise((r) => setTimeout(r, 800));
-          render(router);
+          await render(router);
         } else {
           const state = await storage.load();
           state.setupNextIndex = promptIndex + 1;
@@ -200,7 +225,7 @@
           if (promptIndex >= prompts.length) {
             await finishSetup(router);
           } else {
-            render(router);
+            await render(router);
           }
         }
       } catch (e) {
@@ -213,31 +238,30 @@
       }
     });
 
-    const off4 = hardware.on('scrollUp', () => {
+    const off4 = hardware.on('scrollUp', async () => {
       if (promptIndex > 0 && recState !== 'recording' && recState !== 'saving') {
         promptIndex--;
-        render(router);
+        await render(router);
       }
     });
 
-    const off5 = hardware.on('scrollDown', () => {
+    const off5 = hardware.on('scrollDown', async () => {
       if (recState === 'recording' || recState === 'saving') return;
       if (promptIndex + 1 >= prompts.length) return;
       if (parentMode) {
         promptIndex++;
-        render(router);
+        await render(router);
         return;
       }
       // setup mode: only advance past prompts that already have a saved clip
-      storage.loadClip(prompt.slug).then((clip) => {
-        if (clip && promptIndex + 1 < prompts.length) {
-          promptIndex++;
-          render(router);
-        }
-      });
+      const clip = await storage.loadClip(prompt.slug);
+      if (clip && promptIndex + 1 < prompts.length) {
+        promptIndex++;
+        await render(router);
+      }
     });
 
-    cleanups = [off1, off2, off3, off4, off5, () => clearInterval(timerInterval)];
+    cleanups = [off1, off2, off3, off4, off5, offReplay, () => clearInterval(timerInterval)];
   }
 
   function renderExit(router, root) {
@@ -254,9 +278,9 @@
       router.parentMode = false;
       await router.goto('opening');
     });
-    const off2 = hardware.on('scrollUp', () => {
+    const off2 = hardware.on('scrollUp', async () => {
       promptIndex = prompts.length - 2;
-      render(router);
+      await render(router);
     });
     cleanups = [off1, off2];
   }

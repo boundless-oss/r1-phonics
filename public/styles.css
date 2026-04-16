@@ -268,6 +268,23 @@ html, body {
   text-shadow: var(--neon-text-green);
   font-weight: 600;
 }
+.setup-state.tappable {
+  cursor: pointer;
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  border-radius: 4px;
+  padding: 3px 8px;
+  background: rgba(0, 255, 136, 0.04);
+}
+.setup-state.tappable:active {
+  background: rgba(0, 255, 136, 0.12);
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.3);
+}
+.saved-badge {
+  color: var(--ok);
+  text-shadow: var(--neon-text-green);
+  margin-left: 6px;
+  font-weight: 700;
+}
 .setup-state.error {
   color: var(--warm);
   text-shadow: 0 0 8px rgba(255, 45, 107, 0.4);
