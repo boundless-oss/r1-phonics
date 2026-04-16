@@ -205,8 +205,11 @@
         }
       } catch (e) {
         recState = 'reviewing';
-        const msg = (e && e.message) ? e.message.slice(0, 40) : String(e).slice(0, 40);
-        updateState(`save failed: ${msg}`, 'error');
+        const fullMsg = (e && e.message) ? e.message : String(e);
+        const bytes = currentBlob ? currentBlob.size : 0;
+        const kb = (bytes / 1024).toFixed(1);
+        stateEl.innerHTML = `<div class="err-title">save failed (${kb} KB blob)</div><div class="err-body">${escapeHtml(fullMsg)}</div>`;
+        stateEl.className = 'setup-state error wrap';
       }
     });
 
@@ -256,6 +259,12 @@
       render(router);
     });
     cleanups = [off1, off2];
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]));
   }
 
   async function finishSetup(router) {

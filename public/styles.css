@@ -272,6 +272,22 @@ html, body {
   color: var(--warm);
   text-shadow: 0 0 8px rgba(255, 45, 107, 0.4);
 }
+.setup-state.wrap {
+  max-width: 215px;
+  word-break: break-word;
+  text-align: center;
+  line-height: 1.4;
+}
+.setup-state .err-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.setup-state .err-body {
+  font-size: 10px;
+  color: var(--muted);
+  max-height: 80px;
+  overflow-y: auto;
+}
 
 .setup.parent .setup-progress {
   color: var(--warm);
