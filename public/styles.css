@@ -5,10 +5,49 @@
   --accent: #00e8ff;
   --warm: #ff2d6b;
   --ok: #00ff88;
-  --glow-accent: rgba(0, 232, 255, 0.3);
-  --glow-warm: rgba(255, 45, 107, 0.3);
-  --glow-ok: rgba(0, 255, 136, 0.3);
   --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+
+  --neon-cyan:
+    0 0 4px #fff,
+    0 0 11px #fff,
+    0 0 19px #fff,
+    0 0 40px #00e8ff,
+    0 0 80px #00e8ff,
+    0 0 90px #00e8ff,
+    0 0 100px #00e8ff,
+    0 0 150px #00e8ff;
+
+  --neon-cyan-sm:
+    0 0 3px #fff,
+    0 0 8px #fff,
+    0 0 20px #00e8ff,
+    0 0 40px #00e8ff;
+
+  --neon-pink:
+    0 0 4px #fff,
+    0 0 11px #fff,
+    0 0 19px #fff,
+    0 0 40px #ff2d6b,
+    0 0 80px #ff2d6b;
+
+  --neon-pink-sm:
+    0 0 3px #fff,
+    0 0 8px #fff,
+    0 0 20px #ff2d6b,
+    0 0 40px #ff2d6b;
+
+  --neon-green:
+    0 0 4px #fff,
+    0 0 11px #fff,
+    0 0 19px #fff,
+    0 0 40px #00ff88,
+    0 0 80px #00ff88;
+
+  --neon-green-sm:
+    0 0 3px #fff,
+    0 0 8px #fff,
+    0 0 20px #00ff88,
+    0 0 40px #00ff88;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -46,7 +85,7 @@ html, body {
 .opening-glyph {
   font-size: 48px;
   color: var(--accent);
-  text-shadow: 0 0 24px var(--glow-accent);
+  text-shadow: var(--neon-cyan);
   line-height: 1;
   letter-spacing: 0.1em;
 }
@@ -55,6 +94,7 @@ html, body {
   font-size: 11px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
+  text-shadow: 0 0 6px rgba(80, 80, 104, 0.5);
 }
 
 /* ----- Introduce ----- */
@@ -70,8 +110,8 @@ html, body {
   font-weight: 700;
   font-size: 180px;
   line-height: 1;
-  color: var(--accent);
-  text-shadow: 0 0 40px var(--glow-accent), 0 0 80px rgba(0, 232, 255, 0.15);
+  color: #fff;
+  text-shadow: var(--neon-cyan);
   text-align: center;
 }
 
@@ -96,15 +136,17 @@ html, body {
   font-size: 88px;
   line-height: 1;
   color: var(--fg);
+  text-shadow: var(--neon-cyan-sm);
   background: transparent;
-  border: 1px solid var(--muted);
+  border: 1px solid rgba(0, 232, 255, 0.2);
   border-radius: 6px;
   cursor: pointer;
 }
 .choice:active {
-  color: var(--accent);
+  color: #fff;
   border-color: var(--accent);
-  box-shadow: 0 0 12px var(--glow-accent), inset 0 0 12px rgba(0, 232, 255, 0.08);
+  box-shadow: 0 0 15px rgba(0, 232, 255, 0.4), 0 0 30px rgba(0, 232, 255, 0.2), inset 0 0 15px rgba(0, 232, 255, 0.06);
+  text-shadow: var(--neon-cyan);
 }
 
 /* ----- Setup wizard ----- */
@@ -131,8 +173,8 @@ html, body {
   font-weight: 700;
   font-size: 100px;
   line-height: 1;
-  color: var(--accent);
-  text-shadow: 0 0 30px var(--glow-accent);
+  color: #fff;
+  text-shadow: var(--neon-cyan);
 }
 .setup-say {
   font-size: 15px;
@@ -141,8 +183,9 @@ html, body {
 }
 .setup-say em {
   font-style: normal;
-  color: var(--accent);
+  color: #fff;
   font-weight: 600;
+  text-shadow: var(--neon-cyan-sm);
 }
 .setup-context {
   font-size: 11px;
@@ -157,16 +200,19 @@ html, body {
   letter-spacing: 0.05em;
 }
 .setup-state.recording {
-  color: var(--warm);
-  text-shadow: 0 0 8px var(--glow-warm);
+  color: #fff;
+  text-shadow: var(--neon-pink-sm);
   font-weight: 600;
 }
 .setup-state.ok {
-  color: var(--ok);
-  text-shadow: 0 0 8px var(--glow-ok);
+  color: #fff;
+  text-shadow: var(--neon-green-sm);
   font-weight: 600;
 }
-.setup-state.error { color: var(--warm); }
+.setup-state.error {
+  color: var(--warm);
+  text-shadow: 0 0 8px rgba(255, 45, 107, 0.4);
+}
 
 /* ----- Closing ----- */
 .closing {
@@ -176,8 +222,8 @@ html, body {
 }
 .closing-glyph {
   font-size: 48px;
-  color: var(--ok);
-  text-shadow: 0 0 24px var(--glow-ok);
+  color: #fff;
+  text-shadow: var(--neon-green);
   line-height: 1;
   letter-spacing: 0.1em;
 }
