@@ -135,6 +135,11 @@ html, body {
     drop-shadow(0 0 15px #00e8ff)
     drop-shadow(0 0 35px rgba(0, 232, 255, 0.5));
   text-align: center;
+  opacity: 0.75;
+  transition: opacity 400ms ease;
+}
+.letter-big.ready {
+  opacity: 1;
 }
 
 /* ----- Discriminate ----- */

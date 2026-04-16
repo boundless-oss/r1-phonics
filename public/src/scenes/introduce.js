@@ -4,7 +4,7 @@
 
   const NAME_TO_SOUND_PAUSE = 500;
   const SOUND_PAUSE = 800;
-  const FINAL_PAUSE = 600;
+  const POST_MODEL_GRACE = 4000;
 
   async function enter(router) {
     const state = router.state;
@@ -16,33 +16,40 @@
       </div>`;
 
     let advanced = false;
+    let inputEnabled = false;
+
     const advance = async () => {
-      if (advanced) return;
+      if (advanced || !inputEnabled) return;
       advanced = true;
       off1(); off2(); off3();
       await router.goto('discriminate');
     };
+
     const off1 = hardware.on('sideClick', advance);
     const off2 = hardware.on('longPressEnd', advance);
     const onTap = () => advance();
-    root.addEventListener('click', onTap, { once: true });
+    root.addEventListener('click', onTap);
     const off3 = () => root.removeEventListener('click', onTap);
 
-    // Model: name → pause → sound → pause → sound.
-    // User can interrupt at any time.
+    // Model: name then sound three times. Input is ignored while modeling.
     await audio.playName(letter);
-    if (advanced) return;
     await sleep(NAME_TO_SOUND_PAUSE);
-    if (advanced) return;
 
     await audio.playLetter(letter);
-    if (advanced) return;
     await sleep(SOUND_PAUSE);
-    if (advanced) return;
 
     await audio.playLetter(letter);
-    if (advanced) return;
-    await sleep(FINAL_PAUSE);
+    await sleep(SOUND_PAUSE);
+
+    await audio.playLetter(letter);
+    await sleep(SOUND_PAUSE);
+
+    // Modeling complete. Child can now tap to advance, or we auto-advance
+    // after a grace window so the ritual doesn't get stuck.
+    inputEnabled = true;
+    root.querySelector('.letter-big').classList.add('ready');
+
+    await sleep(POST_MODEL_GRACE);
     advance();
   }
 
