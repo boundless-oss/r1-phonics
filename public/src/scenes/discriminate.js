@@ -6,7 +6,6 @@
     const state = router.state;
     const target = sequence.currentLetter(state);
     const distractor = sequence.distractorFor(target);
-    // Randomize left/right so correct answer isn't always the same side.
     const onLeft = Math.random() < 0.5 ? target : distractor;
     const onRight = onLeft === target ? distractor : target;
 
@@ -20,10 +19,11 @@
       </div>`;
 
     let settled = false;
+    let inputEnabled = false;
     const buttons = Array.from(root.querySelectorAll('.choice'));
 
     const settle = async (choseLetter, chosenBtn) => {
-      if (settled) return;
+      if (settled || !inputEnabled) return;
       settled = true;
       off1(); off2(); off3();
 
@@ -31,7 +31,6 @@
       if (chosenBtn) {
         chosenBtn.classList.add(correct ? 'selected-correct' : 'selected-wrong');
       }
-      // Disable further input visually + functionally
       buttons.forEach((b) => b.setAttribute('disabled', 'true'));
 
       if (correct) {
@@ -45,23 +44,27 @@
       await router.goto('closing');
     };
 
-    // Play target sound once on entry, then wait for choice.
-    await sleep(200);
-    await audio.playLetter(target);
-
-    // Button clicks — no {once:true}; settle() guards against re-entry.
     buttons.forEach((btn) => {
       btn.addEventListener('click', () => settle(btn.dataset.letter, btn));
     });
 
-    // Scroll wheel as selector: scrollUp picks left, scrollDown picks right
     const off1 = hardware.on('scrollUp', () => settle(onLeft, buttons.find((b) => b.dataset.letter === onLeft)));
     const off2 = hardware.on('scrollDown', () => settle(onRight, buttons.find((b) => b.dataset.letter === onRight)));
-    // sideClick re-plays the target sound for hesitant children
     const off3 = hardware.on('sideClick', async () => {
-      if (settled) return;
+      if (settled || !inputEnabled) return;
       await audio.playLetter(target);
     });
+
+    // Prompt sequence: sound → phrase → letter name. Input gated until done.
+    await sleep(200);
+    await audio.playLetter(target);
+    await sleep(400);
+    await audio.playPhrase('find-letter');
+    await sleep(150);
+    await audio.playName(target);
+
+    inputEnabled = true;
+    buttons.forEach((b) => b.classList.add('ready'));
   }
 
   function exit() {

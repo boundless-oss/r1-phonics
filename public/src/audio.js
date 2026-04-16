@@ -106,6 +106,11 @@
     if (clip) return playClip(`praise-${slug}`, clip);
   }
 
+  async function playPhrase(slug) {
+    const clip = await storage().loadClipWithMeta(`phrase-${slug}`);
+    if (clip) return playClip(`phrase-${slug}`, clip);
+  }
+
   // Synthesized chimes — never recorded. Warm sine triads with gentle envelopes.
   async function playChime(which) {
     const c = getCtx();
@@ -150,7 +155,7 @@
   window.R1Phonics = window.R1Phonics || {};
   window.R1Phonics.audio = {
     unlock, onUnlock, isUnlocked,
-    playLetter, playName, playPraise, playChime,
+    playLetter, playName, playPraise, playPhrase, playChime,
     playClip, playClipDirect, PRAISE_TEXT,
   };
 })();

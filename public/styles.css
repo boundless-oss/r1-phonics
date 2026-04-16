@@ -172,7 +172,11 @@ html, body {
   border: 1px solid rgba(0, 232, 255, 0.2);
   border-radius: 6px;
   cursor: pointer;
-  transition: filter 140ms ease, border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+  opacity: 0.6;
+  transition: opacity 300ms ease, filter 140ms ease, border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+.choice.ready {
+  opacity: 1;
 }
 .choice:active {
   -webkit-text-stroke-color: #fff;

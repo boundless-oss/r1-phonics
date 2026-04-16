@@ -56,7 +56,16 @@
       context: 'say this phrase warmly',
       category: 'praise',
     }));
-    return [...letterPairs, ...praise];
+    const phrases = [
+      {
+        slug: 'phrase-find-letter',
+        big: '?',
+        say: '"Can you find the letter..."',
+        context: 'warm rising tone, trail off at the end',
+        category: 'phrase',
+      },
+    ];
+    return [...letterPairs, ...praise, ...phrases];
   }
 
   const EXIT_PROMPT = {
