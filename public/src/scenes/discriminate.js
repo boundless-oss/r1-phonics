@@ -52,13 +52,14 @@
     const off2 = hardware.on('scrollDown', () => settle(onRight, buttons.find((b) => b.dataset.letter === onRight)));
     const off3 = hardware.on('sideClick', async () => {
       if (settled || !inputEnabled) return;
-      await audio.playLetter(target);
+      await audio.playPhrase('find-letter');
+      await sleep(150);
+      await audio.playName(target);
     });
 
-    // Prompt sequence: sound → phrase → letter name. Input gated until done.
+    // Prompt: phrase → letter name. Input gated until done. No sound replay
+    // here — the introduce scene already played it three times.
     await sleep(200);
-    await audio.playLetter(target);
-    await sleep(400);
     await audio.playPhrase('find-letter');
     await sleep(150);
     await audio.playName(target);
