@@ -175,18 +175,28 @@
       if (recState === 'reviewing' && currentBlob) {
         recState = 'saving';
         updateState('saving...', '');
-        await storage.saveClipWithMeta(prompt.slug, currentBlob, currentMeta);
-        const state = await storage.load();
-        state.setupNextIndex = promptIndex + 1;
-        await storage.save(state);
-        promptIndex++;
-        if (promptIndex >= PROMPTS.length) {
-          await finishSetup(router);
-        } else {
-          render(router);
+        try {
+          const result = await storage.saveClipWithMeta(prompt.slug, currentBlob, currentMeta);
+          // Verify round-trip: read it back. If the read returns null,
+          // the write silently failed (quota, platform bug, etc.).
+          const verify = await storage.loadClipWithMeta(prompt.slug);
+          if (!verify) {
+            throw new Error(`wrote ${result.storedBytes}B but read back null`);
+          }
+          const state = await storage.load();
+          state.setupNextIndex = promptIndex + 1;
+          await storage.save(state);
+          promptIndex++;
+          if (promptIndex >= PROMPTS.length) {
+            await finishSetup(router);
+          } else {
+            render(router);
+          }
+        } catch (e) {
+          recState = 'reviewing';
+          const msg = (e && e.message) ? e.message.slice(0, 40) : String(e).slice(0, 40);
+          updateState(`save failed: ${msg}`, 'error');
         }
-      } else if (recState === 'idle') {
-        // sideClick on idle with no recording — skip back to replay last saved if exists
       }
     });
 

@@ -20,20 +20,28 @@
       </div>`;
 
     let settled = false;
+    const buttons = Array.from(root.querySelectorAll('.choice'));
 
-    const settle = async (choseLetter) => {
+    const settle = async (choseLetter, chosenBtn) => {
       if (settled) return;
       settled = true;
       off1(); off2(); off3();
 
-      if (choseLetter === target) {
-        await audio.playPraise(pickOne(['found-1', 'found-2', 'said-1']));
+      const correct = choseLetter === target;
+      if (chosenBtn) {
+        chosenBtn.classList.add(correct ? 'selected-correct' : 'selected-wrong');
+      }
+      // Disable further input visually + functionally
+      buttons.forEach((b) => b.setAttribute('disabled', 'true'));
+
+      if (correct) {
+        await audio.playPraise(pickOne(['found-1', 'found-2']));
       } else {
         await audio.playPraise(pickOne(['remodel-1', 'remodel-2']));
         await sleep(400);
         await audio.playLetter(target);
       }
-      await sleep(400);
+      await sleep(600);
       await router.goto('closing');
     };
 
@@ -41,14 +49,14 @@
     await sleep(200);
     await audio.playLetter(target);
 
-    // Button clicks
-    Array.from(root.querySelectorAll('.choice')).forEach((btn) => {
-      btn.addEventListener('click', () => settle(btn.dataset.letter), { once: true });
+    // Button clicks — no {once:true}; settle() guards against re-entry.
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => settle(btn.dataset.letter, btn));
     });
 
     // Scroll wheel as selector: scrollUp picks left, scrollDown picks right
-    const off1 = hardware.on('scrollUp', () => settle(onLeft));
-    const off2 = hardware.on('scrollDown', () => settle(onRight));
+    const off1 = hardware.on('scrollUp', () => settle(onLeft, buttons.find((b) => b.dataset.letter === onLeft)));
+    const off2 = hardware.on('scrollDown', () => settle(onRight, buttons.find((b) => b.dataset.letter === onRight)));
     // sideClick re-plays the target sound for hesitant children
     const off3 = hardware.on('sideClick', async () => {
       if (settled) return;

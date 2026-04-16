@@ -17,6 +17,19 @@
 
   async function boot() {
     router.state = await storage.load();
+    if (router.state.setupDone) {
+      // Auto-heal: setupDone=true but clips gone (storage cleared, quota blowup, etc).
+      // Verify a few expected clips actually exist before trusting the flag.
+      const sampleKeys = ['letters-s', 'names-s', 'praise-said-1'];
+      const present = await Promise.all(
+        sampleKeys.map((k) => storage.loadClipWithMeta(k).then((c) => !!c))
+      );
+      if (!present.every(Boolean)) {
+        router.state.setupDone = false;
+        router.state.setupNextIndex = 0;
+        await storage.save(router.state);
+      }
+    }
     if (!router.state.setupDone) {
       await router.goto('setup');
     } else {
