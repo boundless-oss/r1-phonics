@@ -97,6 +97,47 @@ html, body {
   background: rgba(47, 111, 163, 0.08);
 }
 
+/* ----- Setup wizard ----- */
+.setup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  gap: 8px;
+  padding: 12px 16px;
+}
+.setup-progress {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  position: absolute;
+  top: 8px;
+  right: 10px;
+}
+.setup-big {
+  font-family: -apple-system, "SF Pro Display", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 120px;
+  line-height: 1;
+  color: var(--fg);
+}
+.setup-hint {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  max-width: 200px;
+}
+.setup-state {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.setup-state.recording { color: var(--warm); font-weight: 600; }
+.setup-state.ok { color: #2d7a3d; font-weight: 600; }
+.setup-state.error { color: var(--warm); }
+
 /* ----- Closing ----- */
 .closing {
   display: flex;

@@ -17,7 +17,11 @@
 
   async function boot() {
     router.state = await storage.load();
-    await router.goto('opening');
+    if (!router.state.setupDone) {
+      await router.goto('setup');
+    } else {
+      await router.goto('opening');
+    }
   }
 
   if (document.readyState === 'loading') {

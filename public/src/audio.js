@@ -71,6 +71,24 @@
     return new Promise((resolve) => { src.onended = () => resolve(); });
   }
 
+  // Play a blob directly (for setup wizard instant playback) with trim + gain.
+  async function playClipDirect(blob, meta) {
+    const c = getCtx();
+    if (c.state === 'suspended') await c.resume();
+    const arrayBuf = await blob.arrayBuffer();
+    const buffer = await c.decodeAudioData(arrayBuf.slice(0));
+    const src = c.createBufferSource();
+    src.buffer = buffer;
+    const g = c.createGain();
+    g.gain.value = meta?.gain ?? 1;
+    src.connect(g); g.connect(c.destination);
+    const offset = meta?.trimStart ?? 0;
+    const end = meta?.trimEnd ?? buffer.duration;
+    const duration = Math.max(0.05, end - offset);
+    src.start(0, offset, duration);
+    return new Promise((resolve) => { src.onended = () => resolve(); });
+  }
+
   // --- Public API: letter, praise, chime ---
 
   async function playLetter(letter) {
@@ -128,6 +146,6 @@
   window.R1Phonics.audio = {
     unlock, onUnlock, isUnlocked,
     playLetter, playPraise, playChime,
-    playClip, PRAISE_TEXT,
+    playClip, playClipDirect, PRAISE_TEXT,
   };
 })();
