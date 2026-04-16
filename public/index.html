@@ -34,6 +34,22 @@
       </div>
     </section>
 
+    <section class="panel" id="panel-recorder">
+      <h2>Recorder</h2>
+      <div class="row"><span class="muted">state</span> <span id="rec-state">idle</span></div>
+      <div class="row"><span class="muted">size</span> <span id="rec-size">—</span></div>
+      <div class="row"><span class="muted">mime</span> <span id="rec-mime">—</span></div>
+      <div class="row" style="margin-top:4px">
+        <button id="btn-rec-init">Init mic</button>
+        <button id="btn-rec-play">Play</button>
+      </div>
+      <div class="row" style="margin-top:4px">
+        <button id="btn-rec-save">Save</button>
+        <button id="btn-rec-load">Load+play</button>
+      </div>
+      <div class="muted" style="font-size:10px;margin-top:4px">Hold PTT to record, release to stop.</div>
+    </section>
+
     <section class="panel" id="panel-viewport">
       <h2>Viewport</h2>
       <div class="row"><span class="muted">window</span> <span id="viewport-size">?</span></div>
@@ -51,10 +67,11 @@
   <script src="src/storage.js"></script>
   <script src="src/hardware.js"></script>
   <script src="src/audio.js"></script>
+  <script src="src/recorder.js"></script>
   <script>
     (function () {
       'use strict';
-      const { hardware, audio, storage } = window.R1Phonics;
+      const { hardware, audio, storage, recorder } = window.R1Phonics;
 
       // --- Events panel ---
       const lastEventEl = document.getElementById('last-event');
@@ -157,8 +174,89 @@
         gridEl.classList.toggle('on');
       });
 
+      // --- Recorder panel ---
+      const recStateEl = document.getElementById('rec-state');
+      const recSizeEl = document.getElementById('rec-size');
+      const recMimeEl = document.getElementById('rec-mime');
+      let lastBlob = null;
+      let lastUrl = null;
+
+      const setRecState = (txt, cls) => {
+        recStateEl.textContent = txt;
+        recStateEl.className = cls || '';
+      };
+
+      document.getElementById('btn-rec-init').addEventListener('click', async () => {
+        logEvent('btn-rec-init click');
+        try {
+          await recorder.init();
+          setRecState('ready', 'ok');
+        } catch (e) {
+          setRecState('init failed', 'warn');
+          logEvent('mic init error: ' + e.message);
+        }
+      });
+
+      hardware.on('longPressStart', async () => {
+        if (recorder.isRecording()) return;
+        try {
+          await recorder.start();
+          setRecState('RECORDING', 'warn');
+        } catch (e) {
+          setRecState('start failed', 'warn');
+          logEvent('rec start error: ' + e.message);
+        }
+      });
+      hardware.on('longPressEnd', async () => {
+        if (!recorder.isRecording()) return;
+        try {
+          const blob = await recorder.stop();
+          lastBlob = blob;
+          if (lastUrl) URL.revokeObjectURL(lastUrl);
+          lastUrl = URL.createObjectURL(blob);
+          recSizeEl.textContent = (blob.size / 1024).toFixed(1) + ' KB';
+          recMimeEl.textContent = blob.type || '(none)';
+          setRecState('recorded', 'ok');
+        } catch (e) {
+          setRecState('stop failed', 'warn');
+          logEvent('rec stop error: ' + e.message);
+        }
+      });
+
+      document.getElementById('btn-rec-play').addEventListener('click', () => {
+        logEvent('btn-rec-play click');
+        if (!lastUrl) { logEvent('no recording yet'); return; }
+        new Audio(lastUrl).play().catch((e) => logEvent('play failed: ' + e.message));
+      });
+
+      document.getElementById('btn-rec-save').addEventListener('click', async () => {
+        logEvent('btn-rec-save click');
+        if (!lastBlob) { logEvent('no recording to save'); return; }
+        try {
+          const { storedBytes, mime } = await storage.saveClip('probe', lastBlob);
+          logEvent(`saved ${(storedBytes / 1024).toFixed(1)}KB ${mime}`);
+        } catch (e) {
+          logEvent('save failed: ' + e.message);
+        }
+      });
+
+      document.getElementById('btn-rec-load').addEventListener('click', async () => {
+        logEvent('btn-rec-load click');
+        try {
+          const blob = await storage.loadClip('probe');
+          if (!blob) { logEvent('no saved clip'); return; }
+          recSizeEl.textContent = (blob.size / 1024).toFixed(1) + ' KB (loaded)';
+          recMimeEl.textContent = blob.type || '(none)';
+          const url = URL.createObjectURL(blob);
+          new Audio(url).play().catch((e) => logEvent('load play failed: ' + e.message));
+          setTimeout(() => URL.revokeObjectURL(url), 10_000);
+        } catch (e) {
+          logEvent('load failed: ' + e.message);
+        }
+      });
+
       // --- Build ID ---
-      document.getElementById('build-id').textContent = 'build ' + new Date('2026-04-16T00:40:00Z').toISOString().slice(5, 16);
+      document.getElementById('build-id').textContent = 'build ' + new Date('2026-04-16T01:00:00Z').toISOString().slice(5, 16);
     })();
   </script>
 </body>
