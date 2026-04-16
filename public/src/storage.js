@@ -68,6 +68,31 @@
     return base64ToBlob(b64, mime);
   }
 
+  // Full clip record including M2d processing metadata (trim bounds + gain).
+  async function loadClipWithMeta(name) {
+    const payload = await backend.getItem(`r1phonics:clip:${name}`);
+    if (!payload) return null;
+    const parsed = JSON.parse(payload);
+    return {
+      blob: base64ToBlob(parsed.b64, parsed.mime),
+      gain: parsed.gain ?? 1,
+      trimStart: parsed.trimStart ?? 0,
+      trimEnd: parsed.trimEnd ?? null,
+    };
+  }
+
+  async function saveClipWithMeta(name, blob, meta) {
+    const b64 = await blobToBase64(blob);
+    const payload = JSON.stringify({
+      mime: blob.type, b64,
+      gain: meta?.gain ?? 1,
+      trimStart: meta?.trimStart ?? 0,
+      trimEnd: meta?.trimEnd ?? null,
+    });
+    await backend.setItem(`r1phonics:clip:${name}`, payload);
+    return { storedBytes: payload.length, mime: blob.type };
+  }
+
   async function removeClip(name) {
     await backend.removeItem(`r1phonics:clip:${name}`);
   }
@@ -76,5 +101,6 @@
   window.R1Phonics.storage = {
     load, save, reset, KEY, DEFAULT_STATE,
     saveClip, loadClip, removeClip,
+    saveClipWithMeta, loadClipWithMeta,
   };
 })();

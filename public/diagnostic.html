@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=240, initial-scale=1.0, user-scalable=no">
+  <title>r1-phonics — M1 diagnostic</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="page">
+    <div id="build-id"></div>
+    <section class="panel" id="panel-events">
+      <h2>Events</h2>
+      <div class="row"><span class="muted">last</span> <span id="last-event">—</span></div>
+      <ol id="event-log" aria-live="polite"></ol>
+    </section>
+
+    <section class="panel" id="panel-audio">
+      <h2>Audio</h2>
+      <div class="row"><span class="muted">unlocked</span> <span id="audio-state" class="warn">no</span></div>
+      <div class="row" style="margin-top:4px">
+        <button id="btn-unlock">Unlock + beep</button>
+        <button id="btn-beep">Beep</button>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-storage">
+      <h2>Storage</h2>
+      <div class="row"><span class="muted">sessions</span> <span id="session-count">?</span></div>
+      <div class="row"><span class="muted">letterIndex</span> <span id="letter-index">?</span></div>
+      <div class="row" style="margin-top:4px">
+        <button id="btn-bump">+1 session</button>
+        <button id="btn-reset">Reset</button>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-recorder">
+      <h2>Recorder</h2>
+      <div class="row"><span class="muted">state</span> <span id="rec-state">idle</span></div>
+      <div class="row"><span class="muted">size</span> <span id="rec-size">—</span></div>
+      <div class="row"><span class="muted">mime</span> <span id="rec-mime">—</span></div>
+      <div class="row" style="margin-top:4px">
+        <button id="btn-rec-init">Init mic</button>
+        <button id="btn-rec-play">Play</button>
+      </div>
+      <div class="row" style="margin-top:4px">
+        <button id="btn-rec-save">Save</button>
+        <button id="btn-rec-load">Load+play</button>
+      </div>
+      <div class="muted" style="font-size:10px;margin-top:4px">Hold PTT to record, release to stop.</div>
+    </section>
+
+    <section class="panel" id="panel-viewport">
+      <h2>Viewport</h2>
+      <div class="row"><span class="muted">window</span> <span id="viewport-size">?</span></div>
+      <div class="row"><span class="muted">screen</span> <span id="screen-size">?</span></div>
+      <div class="row"><span class="muted">dpr</span> <span id="dpr">?</span></div>
+      <div class="row" style="margin-top:4px">
+        <button id="btn-grid">Toggle 10px grid</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="grid-overlay"></div>
+  <div id="viewport-label"></div>
+
+  <script src="src/storage.js"></script>
+  <script src="src/hardware.js"></script>
+  <script src="src/audio.js"></script>
+  <script src="src/recorder.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      const { hardware, audio, storage, recorder } = window.R1Phonics;
+
+      // --- Events panel ---
+      const lastEventEl = document.getElementById('last-event');
+      const logEl = document.getElementById('event-log');
+      const logEvent = (name) => {
+        lastEventEl.textContent = name;
+        const ts = new Date().toISOString().slice(11, 19);
+        const li = document.createElement('li');
+        li.textContent = `${ts} ${name}`;
+        logEl.insertBefore(li, logEl.firstChild);
+        while (logEl.children.length > 6) logEl.removeChild(logEl.lastChild);
+      };
+      hardware.EVENTS.forEach((e) => hardware.on(e, () => logEvent(e)));
+
+      // --- Scroll wheel scrolls the diagnostic page ---
+      const page = document.getElementById('page');
+      hardware.on('scrollUp', () => page.scrollBy({ top: -40, behavior: 'smooth' }));
+      hardware.on('scrollDown', () => page.scrollBy({ top: 40, behavior: 'smooth' }));
+
+      // --- Audio panel ---
+      const audioStateEl = document.getElementById('audio-state');
+      const refreshAudioState = () => {
+        if (audio.isUnlocked()) { audioStateEl.textContent = 'YES'; audioStateEl.className = 'ok'; }
+        else { audioStateEl.textContent = 'no'; audioStateEl.className = 'warn'; }
+      };
+      refreshAudioState();
+
+      let beepCtx = null;
+      const beep = async () => {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        beepCtx = beepCtx || new Ctx();
+        if (beepCtx.state === 'suspended') await beepCtx.resume();
+        const osc = beepCtx.createOscillator();
+        const gain = beepCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 523.25; // C5
+        gain.gain.setValueAtTime(0.0001, beepCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.15, beepCtx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, beepCtx.currentTime + 0.25);
+        osc.connect(gain); gain.connect(beepCtx.destination);
+        osc.start(); osc.stop(beepCtx.currentTime + 0.3);
+      };
+
+      document.getElementById('btn-unlock').addEventListener('click', async () => {
+        logEvent('btn-unlock click');
+        await audio.unlock();
+        refreshAudioState();
+        await beep();
+      });
+      document.getElementById('btn-beep').addEventListener('click', () => {
+        logEvent('btn-beep click');
+        if (!audio.isUnlocked()) {
+          logEvent('beep blocked — unlock first');
+          return;
+        }
+        beep();
+      });
+
+      // --- Storage panel ---
+      const sessionEl = document.getElementById('session-count');
+      const letterEl = document.getElementById('letter-index');
+      const refreshStorage = async () => {
+        const s = await storage.load();
+        sessionEl.textContent = s.sessionCount;
+        letterEl.textContent = s.letterIndex;
+      };
+      document.getElementById('btn-bump').addEventListener('click', async () => {
+        logEvent('btn-bump click');
+        const s = await storage.load();
+        s.sessionCount += 1;
+        s.lastSessionISO = new Date().toISOString();
+        await storage.save(s);
+        await refreshStorage();
+      });
+      document.getElementById('btn-reset').addEventListener('click', async () => {
+        logEvent('btn-reset click');
+        await storage.reset();
+        await refreshStorage();
+      });
+      refreshStorage();
+
+      // --- Viewport panel ---
+      const vpSizeEl = document.getElementById('viewport-size');
+      const scSizeEl = document.getElementById('screen-size');
+      const dprEl = document.getElementById('dpr');
+      const vpLabel = document.getElementById('viewport-label');
+      const refreshViewport = () => {
+        vpSizeEl.textContent = `${window.innerWidth}×${window.innerHeight}`;
+        scSizeEl.textContent = `${screen.width}×${screen.height}`;
+        dprEl.textContent = window.devicePixelRatio.toFixed(2);
+        vpLabel.textContent = `${window.innerWidth}×${window.innerHeight} @${window.devicePixelRatio.toFixed(2)}x`;
+      };
+      window.addEventListener('resize', refreshViewport);
+      refreshViewport();
+
+      const gridEl = document.getElementById('grid-overlay');
+      document.getElementById('btn-grid').addEventListener('click', () => {
+        logEvent('btn-grid click');
+        gridEl.classList.toggle('on');
+      });
+
+      // --- Recorder panel ---
+      const recStateEl = document.getElementById('rec-state');
+      const recSizeEl = document.getElementById('rec-size');
+      const recMimeEl = document.getElementById('rec-mime');
+      let lastBlob = null;
+      let lastUrl = null;
+
+      const setRecState = (txt, cls) => {
+        recStateEl.textContent = txt;
+        recStateEl.className = cls || '';
+      };
+
+      document.getElementById('btn-rec-init').addEventListener('click', async () => {
+        logEvent('btn-rec-init click');
+        try {
+          await recorder.init();
+          setRecState('ready', 'ok');
+        } catch (e) {
+          setRecState('init failed', 'warn');
+          logEvent('mic init error: ' + e.message);
+        }
+      });
+
+      hardware.on('longPressStart', async () => {
+        if (recorder.isRecording()) return;
+        try {
+          await recorder.start();
+          setRecState('RECORDING', 'warn');
+        } catch (e) {
+          setRecState('start failed', 'warn');
+          logEvent('rec start error: ' + e.message);
+        }
+      });
+      hardware.on('longPressEnd', async () => {
+        if (!recorder.isRecording()) return;
+        try {
+          const blob = await recorder.stop();
+          lastBlob = blob;
+          if (lastUrl) URL.revokeObjectURL(lastUrl);
+          lastUrl = URL.createObjectURL(blob);
+          recSizeEl.textContent = (blob.size / 1024).toFixed(1) + ' KB';
+          recMimeEl.textContent = blob.type || '(none)';
+          setRecState('recorded', 'ok');
+        } catch (e) {
+          setRecState('stop failed', 'warn');
+          logEvent('rec stop error: ' + e.message);
+        }
+      });
+
+      document.getElementById('btn-rec-play').addEventListener('click', () => {
+        logEvent('btn-rec-play click');
+        if (!lastUrl) { logEvent('no recording yet'); return; }
+        new Audio(lastUrl).play().catch((e) => logEvent('play failed: ' + e.message));
+      });
+
+      document.getElementById('btn-rec-save').addEventListener('click', async () => {
+        logEvent('btn-rec-save click');
+        if (!lastBlob) { logEvent('no recording to save'); return; }
+        try {
+          const { storedBytes, mime } = await storage.saveClip('probe', lastBlob);
+          logEvent(`saved ${(storedBytes / 1024).toFixed(1)}KB ${mime}`);
+        } catch (e) {
+          logEvent('save failed: ' + e.message);
+        }
+      });
+
+      document.getElementById('btn-rec-load').addEventListener('click', async () => {
+        logEvent('btn-rec-load click');
+        try {
+          const blob = await storage.loadClip('probe');
+          if (!blob) { logEvent('no saved clip'); return; }
+          recSizeEl.textContent = (blob.size / 1024).toFixed(1) + ' KB (loaded)';
+          recMimeEl.textContent = blob.type || '(none)';
+          const url = URL.createObjectURL(blob);
+          new Audio(url).play().catch((e) => logEvent('load play failed: ' + e.message));
+          setTimeout(() => URL.revokeObjectURL(url), 10_000);
+        } catch (e) {
+          logEvent('load failed: ' + e.message);
+        }
+      });
+
+      // --- Build ID ---
+      document.getElementById('build-id').textContent = 'build ' + new Date('2026-04-16T01:00:00Z').toISOString().slice(5, 16);
+    })();
+  </script>
+</body>
+</html>
