@@ -67,7 +67,7 @@
         while (logEl.children.length > 6) logEl.removeChild(logEl.lastChild);
       };
       hardware.EVENTS.forEach((e) => hardware.on(e, () => logEvent(e)));
-      hardware.onTap(() => logEvent('tap'));
+      hardware.observeTaps(() => logEvent('tap'));
 
       // --- Scroll wheel scrolls the diagnostic page ---
       const page = document.getElementById('page');

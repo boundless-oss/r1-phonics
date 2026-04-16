@@ -22,26 +22,13 @@
     };
   }
 
-  // Touch delegation on document.body per SDK gotcha (inline onclick silently fails).
-  function onTap(fn) {
-    let lastTouchTs = 0;
-    const touchHandler = (ev) => {
-      ev.preventDefault();
-      lastTouchTs = Date.now();
-      fn(ev);
-    };
-    const clickHandler = (ev) => {
-      if (Date.now() - lastTouchTs < 500) return;
-      fn(ev);
-    };
-    document.body.addEventListener('touchstart', touchHandler, { passive: false });
-    document.body.addEventListener('click', clickHandler);
-    return () => {
-      document.body.removeEventListener('touchstart', touchHandler);
-      document.body.removeEventListener('click', clickHandler);
-    };
+  // Passive tap observer — no preventDefault, so normal button clicks still fire.
+  function observeTaps(fn) {
+    const handler = (ev) => fn(ev);
+    document.body.addEventListener('touchstart', handler, { passive: true });
+    return () => document.body.removeEventListener('touchstart', handler);
   }
 
   window.R1Phonics = window.R1Phonics || {};
-  window.R1Phonics.hardware = { on, onTap, EVENTS };
+  window.R1Phonics.hardware = { on, observeTaps, EVENTS };
 })();

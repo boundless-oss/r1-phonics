@@ -10,8 +10,8 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
-  width: 240px;
-  height: 282px;
+  width: 100vw;
+  height: 100vh;
   overflow: hidden;
   background: var(--bg);
   color: var(--fg);
@@ -25,11 +25,11 @@ html, body {
 }
 
 #page {
-  width: 240px;
-  height: 282px;
+  width: 100vw;
+  height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 6px 8px;
+  padding: 6px 8px 14px;
   scrollbar-width: none;
 }
 #page::-webkit-scrollbar { display: none; }
