@@ -76,14 +76,11 @@
   async function playLetter(letter) {
     const clip = await storage().loadClipWithMeta(`letters-${letter}`);
     if (clip) return playClip(`letters-${letter}`, clip);
-    const text = LETTER_FALLBACK_TEXT[letter] || letter;
-    return speak(text, { rate: 0.7, pitch: 0.95 });
   }
 
   async function playPraise(slug) {
     const clip = await storage().loadClipWithMeta(`praise-${slug}`);
     if (clip) return playClip(`praise-${slug}`, clip);
-    return speak(PRAISE_FALLBACK_TEXT[slug] || slug, { rate: 0.9, pitch: 1.05 });
   }
 
   // Synthesized chimes — never recorded. Warm sine triads with gentle envelopes.
@@ -112,33 +109,9 @@
     await new Promise((r) => setTimeout(r, (notes.length * gap + 0.1) * 1000));
   }
 
-  // Web Speech API fallback (used until real clips are recorded in M2e).
-  function speak(text, opts = {}) {
-    return new Promise((resolve) => {
-      if (!('speechSynthesis' in window)) { resolve(); return; }
-      const u = new SpeechSynthesisUtterance(text);
-      u.rate = opts.rate ?? 1;
-      u.pitch = opts.pitch ?? 1;
-      u.volume = opts.volume ?? 0.9;
-      u.onend = () => resolve();
-      u.onerror = () => resolve();
-      window.speechSynthesis.speak(u);
-    });
-  }
 
-  // TTS approximations — used until real clips are recorded in M2e.
-  // These aren't pure phonemes (speechSynthesis can't do IPA cleanly), but
-  // they're close enough to dogfood the ritual pacing.
-  const LETTER_FALLBACK_TEXT = {
-    a: 'aah', b: 'buh', c: 'kuh', d: 'duh', e: 'ehh',
-    f: 'fff', g: 'guh', h: 'huh', i: 'ih',  j: 'juh',
-    k: 'kuh', l: 'lll', m: 'mmm', n: 'nnn', o: 'ahh',
-    p: 'puh', q: 'kwuh', r: 'ruh', s: 'sss', t: 'tuh',
-    u: 'uhh', v: 'vvv', w: 'wuh', x: 'ks',  y: 'yuh', z: 'zzz',
-  };
-
-  // Map praise slug → English fallback for TTS. Real clips override at runtime.
-  const PRAISE_FALLBACK_TEXT = {
+  // Praise fallback text kept for M2e wizard prompt text, not for TTS playback.
+  const PRAISE_TEXT = {
     'said-1': 'You said the sound.',
     'said-2': 'I heard the sound.',
     'found-1': 'You found the letter.',
@@ -155,6 +128,6 @@
   window.R1Phonics.audio = {
     unlock, onUnlock, isUnlocked,
     playLetter, playPraise, playChime,
-    playClip, speak,
+    playClip, PRAISE_TEXT,
   };
 })();
